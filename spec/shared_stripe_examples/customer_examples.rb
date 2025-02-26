@@ -535,4 +535,38 @@ shared_examples 'Customer API' do
     customer = Stripe::Customer.retrieve("test_customer_update")
     expect(customer.discount).to be nil
   end
+
+  it "retrieves a stripe customers payment method" do
+    payment_method = Stripe::PaymentMethod.create({
+      type: 'card',
+      card: {
+        number: '4242424242424242',
+        exp_month: 12,
+        exp_year: 2024,
+        cvc: 123
+      }
+    })
+
+    customer = Stripe::Customer.create({
+      email: 'johnny@appleseed.com',
+      description: "a description"
+    })
+
+    payment_method.attach(customer: customer.id)
+
+    retrieved_payment_method = Stripe::Customer.retrieve_payment_method(customer.id, payment_method.id)
+    expect(retrieved_payment_method.id).to eq(payment_method.id)
+  end
+
+  it "retrives a stripe customers payment method with a default card" do
+    customer = Stripe::Customer.create({
+      email: 'johnny@appleseed.com',
+      source: gen_card_tk,
+      description: "a description"
+    })
+
+    retrieved_payment_method = Stripe::Customer.retrieve_payment_method(customer.id, customer.sources.data.first.id)
+    expect(retrieved_payment_method.id).to eq(customer.sources.data.first.id)
+  end
+
 end
